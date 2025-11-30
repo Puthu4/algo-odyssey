@@ -42,12 +42,12 @@ export default function CodeEditor() {
   setMalpracticeCount((prev) => {
     const newCount = prev + 1;
 
-    // First & second violations → only WARN
+    // First & second violations → warning only
     if (newCount <= 2) {
       setShowMalpracticeWarning(true);
     }
 
-    // Third violation → BLOCK
+    // Third violation → block user
     if (newCount === 3) {
       setIsBlocked(true);
 
@@ -55,8 +55,8 @@ export default function CodeEditor() {
       if (videoRef.current?.srcObject) {
         videoRef.current.srcObject.getTracks().forEach((t) => t.stop());
       }
-
-      // Block user in backend
+      
+      // Backend block call
       fetch("/api/block-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -64,11 +64,10 @@ export default function CodeEditor() {
           email: localStorage.getItem("email"),
           reason: "Malpractice detected automatically",
         }),
-      });
+      });navigate("/challenges"); 
 
       alert("⚠️ Malpractice detected — you are blocked!");
-    }
-
+     }
     return newCount;
   });
 };
@@ -109,9 +108,8 @@ export default function CodeEditor() {
 async function proctorCheck() {
   try {
     const frame = captureFrame();
-    if (!frame) return; // no malpractice for missing frame
-
-    const res = await fetch("/api/proctor/check", {
+    if (!frame) return;
+    const res = await fetch("http://localhost:5000/api/proctor/check", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -120,23 +118,25 @@ async function proctorCheck() {
         image: frame,
       }),
     });
-
-    if (!res.ok) return;
-
     const data = await res.json();
+    if (data.status === "ok") return; // all good
 
-    // ONLY one condition triggers malpractice
+    // Only mismatch triggers malpractice
     if (data.status === "mismatch") {
-      console.warn("Mismatch detected:", data.distance);
-      handleGlobalMalpractice(); // only once
-      return;
+      console.warn("Face mismatch detected:", data.distance);
+      handleGlobalMalpractice();
     }
-
-    if (data.status === "noface") return;
-    if (data.status === "error") return;
-
+    // No malpractice for no face, dark, error
+    if (data.status === "noface") {
+      console.warn("Face mismatch detected:", data.distance);
+      handleGlobalMalpractice();
+    }
+    if (data.status === "error") {
+      console.warn("Face mismatch detected:", data.distance);
+      handleGlobalMalpractice();
+    }
   } catch (err) {
-    console.error("Proctor check failed:", err);
+    console.error("Proctor error:", err);
   }
 }
 
@@ -150,7 +150,9 @@ const [showMalpracticeWarning, setShowMalpracticeWarning] = useState(false);
 useEffect(() => {
   fetchChallenge();
   enterFullscreen();
-  startWebcam();
+  setTimeout(() => {
+    startWebcam();
+  }, 500);
 
   // ================= PROCTOR CHECK DELAY ==================
   let idInterval;
@@ -161,6 +163,7 @@ useEffect(() => {
     idInterval = setInterval(proctorCheck, 15000); // every 15 seconds
     setProctorIntervalId(idInterval);
   };
+
   startChecks();
 
   // ==================== MALPRACTICE TRIGGERS =====================
@@ -263,32 +266,16 @@ useEffect(() => {
       elem.requestFullscreen().catch(err => console.error("Fullscreen error:", err));
     }
   };
-
-  const handleEscPress = (e) => {
-    if (e.key === "Escape") {
-      setShowFullscreenWarning(true);
-      setCountdown(5);
-    }
-  };
-
-  const handleFullscreenChange = () => {
-    if (!document.fullscreenElement) {
-      setShowFullscreenWarning(true);
-      setCountdown(5);
-    } else {
-      setShowFullscreenWarning(false);
-    }
-  };
-// // 🚨 Handle malpractice attempts like copy/paste or tab switch
+ // 🚨 Handle malpractice attempts like copy/paste or tab switch
 // const handleMalpractice = (e) => {
 //   e.preventDefault();
 //   triggerMalpractice();
 // };
 
 // 🚨 Detect when tab is hidden or user switches windows
-const handleVisibilityChange = () => {
-  if (document.hidden) triggerMalpractice();
-};
+// const handleVisibilityChange = () => {
+//   if (document.hidden) triggerMalpractice();
+// };
 
 // const triggerMalpractice = () => {
 //   if (malpracticeCount >= 1) {
