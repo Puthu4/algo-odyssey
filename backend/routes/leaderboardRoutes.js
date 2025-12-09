@@ -1,6 +1,7 @@
 // backend/routes/leaderboardRoutes.js
 import express from "express";
 import Submission from "../models/Submission.js";
+import MalpracticeLog from "../models/MalpracticeLog.js";
 
 const router = express.Router();
 
@@ -20,19 +21,51 @@ function computeEfficiency(sub, maxTime, maxExec) {
 }
 
 /**
+ * Helper: build plagiarism map from logs
+ * plagiarismMap[userId] => 0–100
+ */
+function buildPlagiarismMap(malpracticeLogs) {
+  const plagiarismMap = {};
+
+  malpracticeLogs.forEach((log) => {
+    const uid = log.userId?.toString();
+    if (!uid) return;
+
+    // If your MalpracticeLog has its own score field, use it:
+    const baseScore =
+      typeof log.plagiarismScore === "number"
+        ? log.plagiarismScore
+        : 20; // fallback: +20 per event
+
+    plagiarismMap[uid] = Math.min(
+      (plagiarismMap[uid] || 0) + baseScore,
+      100
+    );
+  });
+
+  return plagiarismMap;
+}
+
+/**
  * GET /api/leaderboard/latest
  * Shows overall leaderboard across all challenges
  */
 router.get("/latest", async (req, res) => {
   try {
     const submissions = await Submission.find().populate("userId", "fullName");
+    const malpracticeLogs = await MalpracticeLog.find().lean();
 
     if (!submissions.length)
       return res.json({ leaderboard: [], message: "No submissions yet" });
 
+    // Build plagiarism score per user
+    const plagiarismMap = buildPlagiarismMap(malpracticeLogs);
+
     // Find global max for normalization
     const maxTime = Math.max(...submissions.map((s) => s.timeTaken || 0.001));
-    const maxExec = Math.max(...submissions.map((s) => s.executionTime || 0.001));
+    const maxExec = Math.max(
+      ...submissions.map((s) => s.executionTime || 0.001)
+    );
 
     const userStats = {};
 
@@ -41,6 +74,9 @@ router.get("/latest", async (req, res) => {
       if (!userId) return;
 
       const effScore = computeEfficiency(s, maxTime, maxExec);
+
+      // 🔍 IMPORTANT: this must already be computed when saving Submission
+      // make sure your grading code sets s.correctnessScore (0–100)
       const correctness = parseFloat(s.correctnessScore) || 0;
 
       if (!userStats[userId]) {
@@ -61,8 +97,24 @@ router.get("/latest", async (req, res) => {
     const leaderboard = Object.values(userStats).map((u) => {
       const correctnessScore = u.totalCorrectness / u.count;
       const efficiencyPercentile = u.totalEfficiency / u.count;
-      const totalScore = 0.7 * correctnessScore + 0.3 * efficiencyPercentile;
-      return { ...u, correctnessScore, efficiencyPercentile, totalScore };
+      const plagiarismScore = plagiarismMap[u.userId] || 0;
+
+      // 👉 Raw score with penalty
+      const rawScore =
+        0.7 * correctnessScore +
+        0.3 * efficiencyPercentile -
+        0.1 * plagiarismScore;
+
+      // ✅ OPTION 2: never go below 0
+      const totalScore = Math.max(rawScore, 0);
+
+      return {
+        ...u,
+        correctnessScore,
+        efficiencyPercentile,
+        plagiarismScore,
+        totalScore,
+      };
     });
 
     leaderboard.sort((a, b) => b.totalScore - a.totalScore);
@@ -82,14 +134,29 @@ router.get("/latest", async (req, res) => {
 router.get("/:challengeId", async (req, res) => {
   try {
     const { challengeId } = req.params;
-    const submissions = await Submission.find({ challengeId }).populate("userId", "fullName");
+
+    const submissions = await Submission.find({ challengeId }).populate(
+      "userId",
+      "fullName"
+    );
+    const malpracticeLogs = await MalpracticeLog.find({
+      challengeId,
+    }).lean();
 
     if (!submissions.length)
-      return res.json({ leaderboard: [], message: "No submissions for this challenge yet" });
+      return res.json({
+        leaderboard: [],
+        message: "No submissions for this challenge yet",
+      });
+
+    // Build plagiarism score per user (just this challenge)
+    const plagiarismMap = buildPlagiarismMap(malpracticeLogs);
 
     // Find max values for normalization
     const maxTime = Math.max(...submissions.map((s) => s.timeTaken || 0.001));
-    const maxExec = Math.max(...submissions.map((s) => s.executionTime || 0.001));
+    const maxExec = Math.max(
+      ...submissions.map((s) => s.executionTime || 0.001)
+    );
 
     const userStats = {};
 
@@ -118,8 +185,22 @@ router.get("/:challengeId", async (req, res) => {
     const leaderboard = Object.values(userStats).map((u) => {
       const correctnessScore = u.totalCorrectness / u.count;
       const efficiencyPercentile = u.totalEfficiency / u.count;
-      const totalScore = 0.7 * correctnessScore + 0.3 * efficiencyPercentile;
-      return { ...u, correctnessScore, efficiencyPercentile, totalScore };
+      const plagiarismScore = plagiarismMap[u.userId] || 0;
+
+      const rawScore =
+        0.7 * correctnessScore +
+        0.3 * efficiencyPercentile -
+        0.1 * plagiarismScore;
+
+      const totalScore = Math.max(rawScore, 0);
+
+      return {
+        ...u,
+        correctnessScore,
+        efficiencyPercentile,
+        plagiarismScore,
+        totalScore,
+      };
     });
 
     leaderboard.sort((a, b) => b.totalScore - a.totalScore);

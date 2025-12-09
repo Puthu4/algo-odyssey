@@ -8,6 +8,10 @@ const rankingSchema = new mongoose.Schema({
   totalScore: { type: Number, default: 0 }, // optional: can combine correctness + efficiency
   rank: { type: Number, default: 0 },
   lastUpdated: { type: Date, default: Date.now },
+  correctnessScore: Number,
+  efficiencyPercentile: Number,
+  plagiarismScore: {type: Number, default: 0},
+  totalScore: Number
 });
 
 export default mongoose.model("Ranking", rankingSchema);
