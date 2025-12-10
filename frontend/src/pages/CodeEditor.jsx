@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import MonacoEditor from "@monaco-editor/react";
 
 import "../styles/CodeEditor.css";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 export default function CodeEditor() {
   const { id } = useParams();
@@ -109,7 +110,7 @@ async function proctorCheck() {
   try {
     const frame = captureFrame();
     if (!frame) return;
-    const res = await fetch("http://localhost:5000/api/proctor/check", {
+    const res = await fetch("${API_BASE}/api/proctor/check", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -333,7 +334,7 @@ useEffect(() => {
 
   const fetchChallenge = async () => {
   try {
-    const res = await fetch(`http://localhost:5000/api/challenges/${id}`);
+    const res = await fetch(`${API_BASE}/api/challenges/${id}`);
     if (!res.ok) throw new Error("Challenge not found");
     const data = await res.json();
     setChallenge(data);
@@ -378,7 +379,7 @@ if (remaining <= 0) {
 
     try {
       // Run visible test cases
-      const res1 = await fetch("http://localhost:5000/api/run", {
+      const res1 = await fetch("${API_BASE}/api/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, testCases: visibleTestCases, language }),
@@ -399,7 +400,7 @@ if (remaining <= 0) {
       if (hiddenTestCases.length > 0) {
         setHiddenRunning(true);
         try {
-          const res2 = await fetch("http://localhost:5000/api/run", {
+          const res2 = await fetch("${API_BASE}/api/run", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ code, testCases: hiddenTestCases, language }),
@@ -430,7 +431,7 @@ if (remaining <= 0) {
     if (!challenge) return;
     setCustomOutput("Running...");
     try {
-      const res = await fetch("http://localhost:5000/api/run", {
+      const res = await fetch("${API_BASE}/api/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -470,7 +471,7 @@ if (remaining <= 0) {
     const timeTaken = (challenge.timeLimit || 300) - timeLeft;
 
     try {
-      const res = await fetch("http://localhost:5000/api/submissions", {
+      const res = await fetch("${API_BASE}/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

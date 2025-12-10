@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import NavbarStudent from "../components/NavbarStudent";
 import "../styles/ChallengesPage.css";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
 export default function ChallengesPage() {
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +34,7 @@ export default function ChallengesPage() {
 useEffect(() => {
   const checkBlockedStatus = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/check-blocked/${email}`);
+const res = await fetch(`${API_BASE}/api/check-blocked/${email}`);
       const data = await res.json();
       setIsBlocked(data.isBlocked);
     } catch (err) {
@@ -53,7 +55,7 @@ useEffect(() => {
 
   const fetchChallenges = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/challenges");
+      const res = await fetch(`${API_BASE}/api/challenges`);
       const data = await res.json();
       setChallenges(data);
       setLoading(false);
@@ -68,7 +70,7 @@ useEffect(() => {
     const fetchSubmissions = async () => {
       if (!userId) return;
       try {
-        const res = await fetch(`http://localhost:5000/api/submissions/user/${userId}`);
+const res = await fetch(`${API_BASE}/api/submissions/user/${userId}`);
         if (!res.ok) throw new Error("Failed to fetch submissions");
         const data = await res.json();
         setSubmittedChallenges(data.map(sub => sub.challengeId._id?.toString() || sub.challengeId.toString()));
@@ -139,7 +141,7 @@ useEffect(() => {
 
     try {
       setVerifying(true);
-      const res = await fetch(`http://localhost:5000/api/verify-identity/${currentChallenge._id}`, {
+const res = await fetch(`${API_BASE}/api/verify-identity/${currentChallenge._id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, image: canvas.toDataURL("image/jpeg") }),

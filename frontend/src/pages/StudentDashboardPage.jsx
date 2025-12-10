@@ -2,6 +2,7 @@ import NavbarStudent from "../components/NavbarStudent";
 import { useEffect, useState } from "react";
 import "../styles/StudentDashboard.css";
 import { FaQuestionCircle } from "react-icons/fa";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 export default function StudentDashboard() {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -13,7 +14,7 @@ const [showHelp, setShowHelp] = useState(false);
 useEffect(() => {
   const fetchLeaderboard = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/leaderboard/latest"); 
+      const res = await fetch("${API_BASE}/api/leaderboard/latest"); 
       if (!res.ok) throw new Error("Failed to fetch leaderboard");
       const data = await res.json();
       setLeaderboard(data.leaderboard || []); // <-- use data.leaderboard

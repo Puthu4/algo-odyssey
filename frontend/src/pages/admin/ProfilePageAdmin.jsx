@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/AdminDashboardUnique.css";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 export default function ProfilePageAdmin() {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ export default function ProfilePageAdmin() {
           return;
         }
 
-        const res = await fetch(`http://localhost:5000/api/profile/${email}`);
+        const res = await fetch(`${API_BASE}/api/profile/${email}`);
         const data = await res.json();
 
         if (data.user) {
@@ -42,7 +43,7 @@ export default function ProfilePageAdmin() {
           });
           setPreview(
             data.user.image
-              ? `http://localhost:5000${data.user.image}`
+              ? `${API_BASE}${data.user.image}`
               : "https://via.placeholder.com/120"
           );
         }
@@ -81,7 +82,7 @@ export default function ProfilePageAdmin() {
         form.append("confirmPassword", formData.confirmPassword);
       }
 
-      const res = await fetch(`http://localhost:5000/api/profile/${formData.email}`, {
+      const res = await fetch(`${API_BASE}/api/profile/${formData.email}`, {
         method: "PUT",
         body: form,
       });

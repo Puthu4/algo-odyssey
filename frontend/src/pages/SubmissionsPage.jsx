@@ -1,6 +1,7 @@
 import NavbarStudent from "../components/NavbarStudent";
 import { useEffect, useState } from "react";
 import "../styles/SubmissionsPage.css";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 export default function SubmissionsPage() {
   const [submissions, setSubmissions] = useState([]);
@@ -12,7 +13,7 @@ useEffect(() => {
   if (!userId) return;
   const fetchSubmissions = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/submissions/user/${userId}`);
+      const res = await fetch(`${API_BASE}/api/submissions/user/${userId}`);
       const data = await res.json();
       setSubmissions(data || []); // fix here
     } catch (err) {

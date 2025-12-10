@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"; 
 import { FaEdit, FaTrash, FaPlus, FaMinus } from "react-icons/fa";
 import "../../styles/ViewChallenges.css";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const languages = ["JavaScript","Python","C","C++","Java","Go","Rust","PHP"];
 
@@ -25,7 +26,7 @@ export default function ViewChallenges() {
 
   const fetchChallenges = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/challenges");
+      const res = await fetch("${API_BASE}/api/challenges");
       const data = await res.json();
       setChallenges(data);
       setLoading(false);
@@ -56,7 +57,7 @@ export default function ViewChallenges() {
 
   const handleEditSave = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/challenges/${editingChallenge}`, {
+      const res = await fetch(`${API_BASE}/api/challenges/${editingChallenge}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editData),
@@ -75,7 +76,7 @@ export default function ViewChallenges() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this challenge?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/challenges/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_BASE}/api/challenges/${id}`, { method: "DELETE" });
       if (res.ok) setChallenges(prev => prev.filter(c => c._id !== id));
     } catch (err) {
       console.error("Error deleting challenge:", err);

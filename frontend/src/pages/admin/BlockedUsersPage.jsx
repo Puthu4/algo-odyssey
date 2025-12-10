@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
 export default function BlockedUsers() {
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -7,7 +9,8 @@ export default function BlockedUsers() {
   const fetchBlocked = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:5000/api/blocked-users");
+      const res = await fetch(`${API_BASE}/api/blocked-users`);
+      //const res = await fetch("http://localhost:5000/api/blocked-users");
       const data = await res.json();
       setBlockedUsers(data);
     } catch (err) {
@@ -22,7 +25,8 @@ export default function BlockedUsers() {
     if (!window.confirm(`Are you sure you want to unblock ${email}?`)) return;
 
     try {
-      const res = await fetch("http://localhost:5000/api/unblock-user", {
+      const res = await fetch(`${API_BASE}/api/unblock-user`, {
+      //const res = await fetch("http://localhost:5000/api/unblock-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

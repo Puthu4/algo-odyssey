@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/ProfilePage.css";
 import NavbarStudent from "../components/NavbarStudent";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ export default function ProfilePage() {
           return;
         }
 
-        const res = await fetch(`http://localhost:5000/api/profile/${email}`);
+        const res = await fetch(`${API_BASE}/api/profile/${email}`);
         const data = await res.json();
 
         if (data.user) {
@@ -46,7 +47,7 @@ export default function ProfilePage() {
           });
           setPreview(
             data.user.image
-              ? `http://localhost:5000${data.user.image}`
+              ? `${API_BASE}${data.user.image}`
               : ""
           );
         }
@@ -94,7 +95,7 @@ export default function ProfilePage() {
     }
 
     const res = await fetch(
-      `http://localhost:5000/api/profile/${formData.email}`,
+      `${API_BASE}/api/profile/${formData.email}`,
       {
         method: "PUT",
         body: form, // send as multipart/form-data
@@ -142,7 +143,7 @@ const handleLogout = () => {
               <img
                 src={
                   preview ||
-                  `http://localhost:5000${user.image}` ||
+                  `${API_BASE}${user.image}` ||
                   "https://via.placeholder.com/120"
                 }
                 alt="Profile"

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "../../styles/NewChallenge.css"; // make sure the path is correct
 //import Challenge from "../../models/Challenge"; // if you plan to directly import model (or use API)
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 export default function NewChallenge() {
   const [title, setTitle] = useState("");
@@ -51,7 +52,8 @@ const [starterCode, setStarterCode] = useState({
     try {
       const body = { title, description, difficulty, timeLimit, startTime, testCases, starterCode };
 
-      const res = await fetch("http://localhost:5000/api/challenges", {
+      const res = await fetch(`${API_BASE}/api/challenges`,{
+      //const res = await fetch("http://localhost:5000/api/challenges", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
