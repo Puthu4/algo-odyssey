@@ -33,12 +33,29 @@ const app = express();
 
 // ------------------ MIDDLEWARE ------------------
 app.use(express.json({ limit: "10mb" }));
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173")
+  .split(",")
+  .map(o => o.trim());
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin: function (origin, callback) {
+      // allow server-to-server & tools like Postman
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(
+          new Error("❌ CORS not allowed for origin: " + origin),
+          false
+        );
+      }
+    },
     credentials: true,
   })
 );
+
 app.use("/uploads", express.static("uploads"));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
